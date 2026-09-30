@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "./lib/supabaseClient";
 import Logo from "./components/Logo";
 import Sidebar from "./components/Sidebar";
 
@@ -10,105 +9,6 @@ const STATUS_META = {
   offer: { label: "Offer", tone: "green" },
   rejected: { label: "Rejected", tone: "red" },
 };
-
-const SEED = [
-  {
-    id: 1,
-    company: "Flutterwave",
-    role: "Product Designer",
-    date_applied: "2026-09-22",
-    job_link: "https://flutterwave.com",
-    contact_person: "Amina Yusuf",
-    status: "interview",
-    notes: [
-      {
-        id: 11,
-        content: "Recruiter screen scheduled for Friday.",
-        created_at: "2026-09-23T09:10:00",
-      },
-    ],
-    created_at: "2026-09-22T08:00:00",
-    updated_at: "2026-09-23T09:10:00",
-  },
-  {
-    id: 2,
-    company: "Andela",
-    role: "Frontend Engineer",
-    date_applied: "2026-09-18",
-    job_link: "https://andela.com",
-    contact_person: "David Obi",
-    status: "applied",
-    notes: [
-      {
-        id: 21,
-        content: "Application submitted through careers portal.",
-        created_at: "2026-09-18T12:20:00",
-      },
-    ],
-    created_at: "2026-09-18T12:20:00",
-    updated_at: "2026-09-18T12:20:00",
-  },
-  {
-    id: 3,
-    company: "Paystack",
-    role: "Product Manager",
-    date_applied: "2026-09-15",
-    job_link: "https://paystack.com",
-    contact_person: "Tomi Adeyemi",
-    status: "offer",
-    notes: [
-      {
-        id: 31,
-        content: "Offer received. Reviewing compensation package.",
-        created_at: "2026-09-24T16:45:00",
-      },
-    ],
-    created_at: "2026-09-15T10:30:00",
-    updated_at: "2026-09-24T16:45:00",
-  },
-  {
-    id: 4,
-    company: "Moniepoint",
-    role: "UX Researcher",
-    date_applied: "2026-09-12",
-    job_link: "https://moniepoint.com",
-    contact_person: "",
-    status: "rejected",
-    notes: [],
-    created_at: "2026-09-12T14:00:00",
-    updated_at: "2026-09-20T11:00:00",
-  },
-  {
-    id: 5,
-    company: "Interswitch",
-    role: "Design Lead",
-    date_applied: "2026-09-08",
-    job_link: "https://interswitchgroup.com",
-    contact_person: "Chioma Eze",
-    status: "applied",
-    notes: [],
-    created_at: "2026-09-08T09:30:00",
-    updated_at: "2026-09-08T09:30:00",
-  },
-  {
-    id: 6,
-    company: "Kora",
-    role: "Product Designer",
-    date_applied: "2026-09-05",
-    job_link: "https://korapay.com",
-    contact_person: "",
-    status: "interview",
-    notes: [
-      {
-        id: 61,
-        content: "Panel interview next week.",
-        created_at: "2026-09-21T13:15:00",
-      },
-    ],
-    created_at: "2026-09-05T08:00:00",
-    updated_at: "2026-09-21T13:15:00",
-  },
-];
 
 function makeNoteId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -145,32 +45,21 @@ function Toast({ toast }) {
   );
 }
 
-function Auth() {
+function Auth({ onContinue }) {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email address.");
       return;
     }
 
-    setSent(true);
+    localStorage.setItem("job-tracker-user-email", email.trim());
+    onContinue(email.trim());
   };
 
   return (
@@ -178,87 +67,101 @@ function Auth() {
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
           <Logo />
-
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">
-              Job Tracker
-            </h1>
-            <p className="text-xs text-slate-400">
-              Track every application in one place.
-            </p>
+            <h1 className="text-lg font-semibold text-slate-900">Job Tracker</h1>
+            <p className="text-xs text-slate-400">Track every application in one place.</p>
           </div>
         </div>
 
-        {!sent ? (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Welcome back
-              </h2>
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Welcome back
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Enter your email to continue to your Job Tracker.
+          </p>
+        </div>
 
-              <p className="mt-2 text-sm text-slate-500">
-                Enter your email and we'll send you a magic sign-in link.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-600">
-                  Email address
-                </label>
-
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-                />
-              </div>
-
-              {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Sending..." : "Send magic link"}
-              </button>
-            </form>
-          </>
-        ) : (
-          <div className="py-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-lg text-emerald-600">
-              ✓
-            </div>
-
-            <h2 className="mt-5 text-xl font-semibold text-slate-900">
-              Check your email
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              We sent a sign-in link to{" "}
-              <strong className="text-slate-700">{email}</strong>.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setSent(false)}
-              className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Use another email
-            </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">
+              Email address
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+            />
           </div>
-        )}
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+          >
+            Continue
+          </button>
+        </form>
       </div>
     </div>
   );
+}
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://job-tracker-backend-jfyb.onrender.com";
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await response.json().catch(() => null)
+    : await response.text().catch(() => "");
+
+  if (!response.ok) {
+    const message =
+      body?.message ||
+      body?.error?.message ||
+      body?.detail ||
+      `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body;
+}
+
+function normalizeApplication(app) {
+  if (!app) return app;
+
+  return {
+    ...app,
+    company: app.company ?? app.company_name ?? "",
+    role: app.role ?? app.role_title ?? "",
+    date_applied: app.date_applied ?? app.applied_date ?? "",
+    job_link: app.job_link ?? app.job_url ?? "",
+    contact_person: app.contact_person ?? app.contact_name ?? "",
+    notes: Array.isArray(app.notes)
+      ? app.notes
+      : app.notes
+        ? [{ id: makeNoteId(), content: String(app.notes), created_at: app.updated_at || new Date().toISOString() }]
+        : [],
+    status: app.status || "applied",
+  };
 }
 
 function StatCard({ label, value, sub, icon }) {
@@ -1253,294 +1156,206 @@ function Modal({ app, onClose, onSave, onDelete, onNote }) {
 }
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState(() =>
+    localStorage.getItem("job-tracker-user-email"),
+  );
+  const [authLoading] = useState(false);
   const [view, setView] = useState("dashboard");
   const [apps, setApps] = useState([]);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+ const notify = (message, type = "success") => {
+   setToast({
+     message,
+     type,
+   });
 
-      setUser(user?.email ?? null);
-      setAuthLoading(false);
-    };
+   window.setTimeout(() => {
+     setToast(null);
+   }, 3000);
+ };
 
-    getUser();
+ useEffect(() => {
+   if (!user) return;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        setUser(session.user.email);
-      }
+   const loadApplications = async () => {
+     try {
+       const data = await apiRequest("/applications");
 
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-      }
-    });
+       const rows = Array.isArray(data)
+         ? data
+         : Array.isArray(data?.data)
+           ? data.data
+           : Array.isArray(data?.applications)
+             ? data.applications
+             : [];
 
-    return () => subscription.unsubscribe();
-  }, []);
+       setApps(rows.map(normalizeApplication));
+     } catch (error) {
+       console.error("Error loading applications:", error);
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
+       notify(`Could not load applications: ${error.message}`, "error");
+     }
+   };
 
-    const loadApplications = async () => {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
+   loadApplications();
+ }, [user]);
 
-      if (!currentUser) return;
-
-      const { data: existingApps, error } = await supabase
-        .from("applications")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("updated_at", { ascending: false });
-
-      if (error) {
-        console.error("Error loading applications:", error);
-        return;
-      }
-
-      if (existingApps && existingApps.length > 0) {
-        setApps(existingApps);
-        return;
-      }
-
-      const saved = localStorage.getItem("job-tracker-applications");
-
-      let oldApps = [];
-
-      try {
-        oldApps = saved ? JSON.parse(saved) : [];
-      } catch (error) {
-        console.error("Error reading saved applications:", error);
-      }
-
-      const appsToMigrate =
-        Array.isArray(oldApps) && oldApps.length > 0 ? oldApps : SEED;
-
-      const rows = appsToMigrate.map((app) => ({
-        user_id: currentUser.id,
-        company: app.company,
-        role: app.role,
-        status: app.status || "applied",
-        date_applied: app.date_applied || null,
-        job_link: app.job_link || null,
-        contact_person: app.contact_person || null,
-        notes: Array.isArray(app.notes) ? app.notes : [],
-        created_at: app.created_at || new Date().toISOString(),
-        updated_at: app.updated_at || new Date().toISOString(),
-      }));
-
-      const { data: migratedApps, error: migrationError } = await supabase
-        .from("applications")
-        .insert(rows)
-        .select("*");
-
-      if (migrationError) {
-        console.error("Error migrating applications:", migrationError);
-        return;
-      }
-
-      setApps(migratedApps || []);
-      localStorage.removeItem("job-tracker-applications");
-    };
-
-    loadApplications();
-  }, [user]);
-
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 2600);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
-  const notify = (message, type = "success") => setToast({ message, type });
-  const logout = async () => {
-    await supabase.auth.signOut();
+ useEffect(() => {
+   if (toast) {
+     const t = setTimeout(() => setToast(null), 2600);
+     return () => clearTimeout(t);
+   }
+ }, [toast]);
+  const logout = () => {
+    localStorage.removeItem("job-tracker-user-email");
     setUser(null);
+    setApps([]);
+    setView("dashboard");
   };
+
   const add = () => setModal({ type: "edit", app: null });
   const edit = (app) => setModal({ type: "edit", app });
+
   const save = async (form) => {
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser();
-
-    if (!currentUser) {
-      notify("Please sign in again.", "error");
-      return;
-    }
-
     const now = new Date().toISOString();
 
-    if (form.id) {
-      const { data, error } = await supabase
-        .from("applications")
-        .update({
-          company: form.company,
-          role: form.role,
-          status: form.status,
-          date_applied: form.date_applied || null,
-          job_link: form.job_link || null,
-          contact_person: form.contact_person || null,
-          notes: Array.isArray(form.notes) ? form.notes : [],
-          updated_at: now,
-        })
-        .eq("id", form.id)
-        .eq("user_id", currentUser.id)
-        .select("*")
-        .single();
+    const payload = {
+      company: form.company,
+      role: form.role,
+      role_title: form.role,
+      status: form.status || "applied",
+      date_applied: form.date_applied || null,
+      applied_date: form.date_applied || null,
+      job_link: form.job_link || null,
+      job_url: form.job_link || null,
+      contact_person: form.contact_person || null,
+      contact_name: form.contact_person || null,
+      notes: Array.isArray(form.notes) ? form.notes : [],
+      updated_at: now,
+    };
 
-      if (error) {
-        console.error("Error updating application:", error);
-        notify("Could not update application.", "error");
-        return;
+    try {
+      let data;
+
+      if (form.id) {
+        data = await apiRequest(`/applications/${form.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+
+        const updated = normalizeApplication(data);
+        setApps((prev) =>
+          prev.map((a) => (a.id === form.id ? updated : a)),
+        );
+        notify("Application updated.");
+      } else {
+        data = await apiRequest("/applications", {
+          method: "POST",
+          body: JSON.stringify({
+            ...payload,
+            created_at: now,
+          }),
+        });
+
+        const created = normalizeApplication(data);
+        setApps((prev) => [created, ...prev]);
+        notify("Application added.");
       }
 
-      setApps((prev) => prev.map((a) => (a.id === form.id ? data : a)));
-      notify("Application updated.");
-    } else {
-      const { data, error } = await supabase
-        .from("applications")
-        .insert({
-          user_id: currentUser.id,
-          company: form.company,
-          role: form.role,
-          status: form.status || "applied",
-          date_applied: form.date_applied || null,
-          job_link: form.job_link || null,
-          contact_person: form.contact_person || null,
-          notes: [],
-          created_at: now,
-          updated_at: now,
-        })
-        .select("*")
-        .single();
-
-      if (error) {
-        console.error("Error adding application:", error);
-        notify("Could not add application.", "error");
-        return;
-      }
-
-      setApps((prev) => [data, ...prev]);
-      notify("Application added.");
+      setModal(null);
+    } catch (error) {
+      console.error("Error saving application:", error);
+      notify(`Could not save application: ${error.message}`, "error");
     }
-
-    setModal(null);
   };
 
   const status = async (id, value) => {
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser();
+    try {
+      const data = await apiRequest(`/applications/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: value,
+          updated_at: new Date().toISOString(),
+        }),
+      });
 
-    if (!currentUser) {
-      notify("Please sign in again.", "error");
-      return;
-    }
-
-    const updatedAt = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from("applications")
-      .update({
-        status: value,
-        updated_at: updatedAt,
-      })
-      .eq("id", id)
-      .eq("user_id", currentUser.id)
-      .select("*")
-      .single();
-
-    if (error) {
+      const updated = normalizeApplication(data);
+      setApps((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      notify(`Status changed to ${STATUS_META[value].label}.`);
+    } catch (error) {
       console.error("Error changing status:", error);
-      notify("Could not change application status.", "error");
-      return;
+      notify(
+        `Could not change application status: ${error.message}`,
+        "error",
+      );
     }
-
-    setApps((prev) => prev.map((a) => (a.id === id ? data : a)));
-    notify(`Status changed to ${STATUS_META[value].label}.`);
   };
 
   const del = async (id) => {
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser();
+    try {
+      await apiRequest(`/applications/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!currentUser) {
-      notify("Please sign in again.", "error");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("applications")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", currentUser.id);
-
-    if (error) {
+      setApps((prev) => prev.filter((a) => a.id !== id));
+      setModal(null);
+      notify("Application deleted.", "info");
+    } catch (error) {
       console.error("Error deleting application:", error);
-      notify("Could not delete application.", "error");
-      return;
+      notify(`Could not delete application: ${error.message}`, "error");
     }
-
-    setApps((prev) => prev.filter((a) => a.id !== id));
-    setModal(null);
-    notify("Application deleted.", "info");
   };
 
   const note = async (appId, newNote) => {
     const app = apps.find((a) => a.id === appId);
-
     if (!app) return;
 
     const updatedNotes = [...(app.notes || []), newNote];
-    const updatedAt = new Date().toISOString();
 
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser();
+    try {
+      const data = await apiRequest(`/applications/${appId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        }),
+      });
 
-    if (!currentUser) {
-      notify("Please sign in again.", "error");
-      return;
-    }
+      const updated = normalizeApplication(data);
 
-    const { data, error } = await supabase
-      .from("applications")
-      .update({
-        notes: updatedNotes,
-        updated_at: updatedAt,
-      })
-      .eq("id", appId)
-      .eq("user_id", currentUser.id)
-      .select("*")
-      .single();
+      setApps((prev) =>
+        prev.map((a) => (a.id === appId ? updated : a)),
+      );
 
-    if (error) {
+      setModal((m) => (m ? { ...m, app: updated } : m));
+      notify("Note added.");
+    } catch (error) {
       console.error("Error adding note:", error);
-      notify("Could not add note.", "error");
-      return;
+      notify(`Could not add note: ${error.message}`, "error");
+    }
+  };
+
+  const exportCsv = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/export.csv`);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "job-applications.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        notify("CSV exported.");
+        return;
+      }
+    } catch (error) {
+      console.error("Backend CSV export failed:", error);
     }
 
-    setApps((prev) => prev.map((a) => (a.id === appId ? data : a)));
-
-    setModal((m) => (m ? { ...m, app: data } : m));
-
-    notify("Note added.");
-  };
-  const exportCsv = () => {
     const head = [
       "company",
       "role",
@@ -1549,6 +1364,7 @@ function App() {
       "contact_person",
       "status",
     ];
+
     const csv = [
       head,
       ...apps.map((a) =>
@@ -1557,6 +1373,7 @@ function App() {
     ]
       .map((r) => r.join(","))
       .join("\n");
+
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1566,14 +1383,18 @@ function App() {
     URL.revokeObjectURL(url);
     notify("CSV exported.");
   };
+
   if (authLoading) {
-    return <div className="auth-page">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
-    return <Auth />;
+    return <Auth onContinue={setUser} />;
   }
-  <Toast toast={toast} />;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -1582,7 +1403,6 @@ function App() {
       <main className="min-w-0 flex-1">
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
           <Logo small />
-
           <button
             type="button"
             onClick={logout}
@@ -1591,6 +1411,7 @@ function App() {
             Log out
           </button>
         </div>
+
         {view === "dashboard" && (
           <Dashboard
             apps={apps}
@@ -1600,7 +1421,8 @@ function App() {
             onDelete={del}
             onViewApplications={() => setView("applications")}
           />
-        )}{" "}
+        )}
+
         {view === "applications" && (
           <Applications
             apps={apps}
@@ -1610,11 +1432,14 @@ function App() {
             onDelete={del}
             onExport={exportCsv}
           />
-        )}{" "}
-        {view === "reminders" && <Reminders apps={apps} onEdit={edit} />}
+        )}
+
+        {view === "reminders" && (
+          <Reminders apps={apps} onEdit={edit} />
+        )}
+
         <footer className="flex items-center justify-between border-t border-slate-200 px-6 py-5 text-xs text-slate-400">
           <span>Job Tracker · calm by design</span>
-
           <button
             type="button"
             onClick={exportCsv}
@@ -1624,6 +1449,7 @@ function App() {
           </button>
         </footer>
       </main>
+
       {modal && (
         <Modal
           app={modal.app}
@@ -1633,6 +1459,7 @@ function App() {
           onNote={note}
         />
       )}
+
       <Toast toast={toast} />
     </div>
   );
